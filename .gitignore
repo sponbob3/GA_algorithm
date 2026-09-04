@@ -1,0 +1,26 @@
+# Virtualenv and Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Run logs
+*.log
+
+# Raw ADS-B arrivals (several GB; place daily parquet files here locally)
+daily_raw/*.parquet
+daily_raw/*.csv
+
+# Per-event diagnostic plots (thousands of PNGs, regenerable from the pipeline)
+results/plots/

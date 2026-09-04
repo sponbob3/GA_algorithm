@@ -1,0 +1,7 @@
+pandas>=2.0,<3
+pyarrow
+matplotlib
+traffic
+reportlab
+pypdf
+numpy
