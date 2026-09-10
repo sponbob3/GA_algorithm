@@ -1,0 +1,37 @@
+# Airport profile: Daytona Beach International (KDAB)
+# Runway thresholds/bearings and elevation from ourairports.com (via the
+# traffic library); values verified against FAA publications.
+
+icao: KDAB
+name: Daytona Beach International
+latitude: 29.18255
+longitude: -81.059464
+elevation_ft: 34.0
+timezone: America/New_York
+
+# Operating-environment preset: training_ga | air_carrier
+# (sets speed/duration thresholds appropriate to the traffic mix; any value
+# can still be overridden below)
+preset: training_ga
+
+# AGL reference: flat (field elevation everywhere) | dem (terrain model
+# sampled under every point; tiles auto-downloaded and cached on first use)
+terrain: flat
+
+# True only when the dataset was queried as ARRIVALS at this airport, so a
+# flight leg ending low & descending means "landed below the ADS-B coverage
+# floor". Leave false for generic traffic captures.
+assume_arrivals_dataset: true
+
+# name: [threshold_latitude, threshold_longitude, true_bearing_deg]
+runways:
+  "07L": [29.172600, -81.077797, 65.236208]
+  "25R": [29.184700, -81.047897, 245.250785]
+  "07R": [29.176001, -81.056801, 64.902047]
+  "25L": [29.179701, -81.047798, 244.906436]
+  "16":  [29.190901, -81.056297, 157.164818]
+  "34":  [29.175699, -81.049004, 337.168375]
+
+# Optional: override any parameter from goaround_pipeline/config.py by name,
+# e.g.  overrides: {APPROACH_MAX_XTRACK_NM: 0.20}
+overrides: {}

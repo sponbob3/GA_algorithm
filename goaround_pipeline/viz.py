@@ -14,24 +14,42 @@ from . import config
 from .approaches import NM_PER_DEG_LAT
 from .classify import ClassifiedApproach
 
-RUNWAY_LENGTHS_NM = {  # approximate, for drawing only
-    "07L": 1.73, "25R": 1.73, "07R": 0.56, "25L": 0.56,
-    "16": 0.99, "34": 0.99,
-}
+def _runway_pairs():
+    """Pair reciprocal runway ends (bearings ~180 deg apart, thresholds
+    within a few NM) so each physical runway is drawn once, threshold to
+    threshold - works for any airport profile."""
+    items = list(config.RUNWAYS.items())
+    pairs, used = [], set()
+    for i, (na, (lata, lona, ba)) in enumerate(items):
+        if na in used:
+            continue
+        for nb, (latb, lonb, bb) in items[i + 1:]:
+            if nb in used:
+                continue
+            recip = abs((ba - bb + 360.0) % 360.0 - 180.0) < 15.0
+            coslat = np.cos(np.radians(lata))
+            dist = np.hypot((latb - lata) * NM_PER_DEG_LAT,
+                            (lonb - lona) * NM_PER_DEG_LAT * coslat)
+            if recip and dist < 4.0:
+                pairs.append((na, (lata, lona), nb, (latb, lonb)))
+                used.update((na, nb))
+                break
+        else:
+            used.add(na)
+            # no partner in the database: draw a 1 NM stub along the bearing
+            b = np.radians(ba)
+            coslat = np.cos(np.radians(lata))
+            end = (lata + np.cos(b) / NM_PER_DEG_LAT,
+                   lona + np.sin(b) / (NM_PER_DEG_LAT * coslat))
+            pairs.append((na, (lata, lona), "", end))
+    return pairs
 
 
 def _draw_runways(ax):
-    for name, (lat, lon, brg) in config.RUNWAYS.items():
-        if name in ("25R", "25L", "34"):
-            continue  # each physical runway drawn once, from the low end
-        length = RUNWAY_LENGTHS_NM[name]
-        b = np.radians(brg)
-        coslat = np.cos(np.radians(lat))
-        dlat = length * np.cos(b) / NM_PER_DEG_LAT
-        dlon = length * np.sin(b) / (NM_PER_DEG_LAT * coslat)
-        ax.plot([lon, lon + dlon], [lat, lat + dlat],
+    for na, (lata, lona), nb, (latb, lonb) in _runway_pairs():
+        ax.plot([lona, lonb], [lata, latb],
                 lw=4, color="0.35", solid_capstyle="butt", zorder=1)
-        ax.annotate(name, (lon, lat), fontsize=7, color="0.35",
+        ax.annotate(na, (lona, lata), fontsize=7, color="0.35",
                     ha="right", va="top")
 
 

@@ -166,8 +166,8 @@ def fig_map(df, out):
                 lon0 + span / np.cos(np.radians(lat0)))
     ax.set_ylim(lat0 - span, lat0 + span)
     ax.set_xlabel("longitude"); ax.set_ylabel("latitude")
-    ax.set_title("Go-around initiation points at KDAB "
-                 f"(n={len(ga)})", loc="left", fontsize=11)
+    ax.set_title(f"Go-around initiation points at "
+                 f"{config.AIRPORT_ICAO} (n={len(ga)})", loc="left", fontsize=11)
     fig.tight_layout(); fig.savefig(out, dpi=150); plt.close(fig)
 
 
@@ -194,7 +194,10 @@ def fig_plateau(df, out):
     fig.tight_layout(); fig.savefig(out, dpi=150); plt.close(fig)
 
 
-def main() -> None:
+def main(out_dir=None) -> None:
+    if out_dir is not None:
+        from pathlib import Path
+        config.OUTPUT_DIR = Path(out_dir)
     df = load()
     figdir = config.OUTPUT_DIR / "figures"
     figdir.mkdir(exist_ok=True)
@@ -216,7 +219,7 @@ def main() -> None:
         "# KDAB go-around detection - summary report",
         "",
         f"Dataset: {df['t_local'].dt.date.min()} to "
-        f"{df['t_local'].dt.date.max()}, ERAU fleet arrivals at KDAB.",
+        f"{df['t_local'].dt.date.max()}, approaches at {config.AIRPORT_ICAO}.",
         "",
         "## Headline numbers",
         "",

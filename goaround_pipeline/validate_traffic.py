@@ -87,7 +87,12 @@ def compare_day(path: Path) -> dict:
 def main(days: list[str]) -> None:
     tot_ours = tot_theirs = tot_both = 0
     for day in days:
-        path = config.DATA_DIR / f"ERU_KDAB_Arrivals_{day}_raw.parquet"
+        matches = sorted(config.DATA_DIR.glob(f"*{day}*.parquet"))
+        if not matches:
+            print(f"{day}: no file matching *{day}*.parquet in "
+                  f"{config.DATA_DIR}")
+            continue
+        path = matches[0]
         c = compare_day(path)
         tot_ours += c["ours"]
         tot_theirs += c["traffic"]

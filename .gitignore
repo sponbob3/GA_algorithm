@@ -18,9 +18,16 @@ __pycache__/
 # Run logs
 *.log
 
-# Raw ADS-B arrivals (several GB; place daily parquet files here locally)
-daily_raw/*.parquet
-daily_raw/*.csv
+# Raw ADS-B data (several GB; OpenSky terms do not permit redistribution).
+# Everything under datasets/ except the README stays local.
+datasets/*
+!datasets/README.md
 
-# Per-event diagnostic plots (thousands of PNGs, regenerable from the pipeline)
+# Run outputs (regenerable; thousands of PNGs)
+output/
+
+# Cached terrain tiles (auto-downloaded per airport on first dem-mode run)
+airports/dem_cache/
+
+# Historical results kept from the original KDAB study
 results/plots/

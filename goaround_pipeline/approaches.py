@@ -59,7 +59,10 @@ def truncated_final(leg: pd.DataFrame,
     because ADS-B coverage was lost during the base turn / short final:
     the leg simply ends low, slow, and close to the field. Counted so the
     approach denominator stays honest; classified downstream (normally as
-    a coverage-truncated full stop)."""
+    a coverage-truncated full stop). Only meaningful for arrivals datasets,
+    where a leg ending low near the field implies a landing."""
+    if not config.ASSUME_ARRIVALS_DATASET:
+        return None
     t = leg["timestamp"]
     if existing:
         last_end = max(a.end for a in existing)

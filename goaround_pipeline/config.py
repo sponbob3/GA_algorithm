@@ -1,15 +1,30 @@
 """
-Configuration for the KDAB go-around detection pipeline.
+Pipeline configuration: every threshold used by the method lives here so the
+method is transparent, tunable, and citable. Units are noted per parameter.
 
-Every threshold used by the method lives here so the method is transparent,
-tunable, and citable. Units are noted on each parameter.
+The airport-specific values below (runways, elevation, ...) are DEFAULTS for
+KDAB; running through run_analysis.py replaces them from the dataset's
+airport profile (airports/<ICAO>.yaml) via profiles.load_profile(). The
+threshold defaults are the `training_ga` preset, calibrated on the KDAB
+training-fleet dataset; presets and per-airport overrides adjust them.
 """
 
 from pathlib import Path
 
 # ---------------------------------------------------------------- paths ----
-DATA_DIR = Path(__file__).resolve().parent.parent / "daily_raw"
+DATA_DIR = Path(__file__).resolve().parent.parent / "datasets" / "KDAB_2025"
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "results"
+
+# ---------------------------------------------------------- environment ----
+# Set by profiles.load_profile(); documented in airports/<ICAO>.yaml.
+PRESET = "training_ga"
+# AGL reference: "flat" = field elevation everywhere; "dem" = terrain model
+# sampled under each position (see terrain.py).
+TERRAIN_MODE = "flat"
+# True only when the dataset was queried as ARRIVALS at the airport, so a
+# flight leg that ends low & descending means "landed below the local ADS-B
+# coverage floor". Enables the coverage-truncation landing rules.
+ASSUME_ARRIVALS_DATASET = True
 
 # -------------------------------------------------------------- airport ----
 AIRPORT_ICAO = "KDAB"

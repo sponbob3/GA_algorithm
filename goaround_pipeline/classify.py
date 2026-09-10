@@ -174,7 +174,8 @@ def classify_approach(app: Approach) -> ClassifiedApproach:
     # at the final landing)
     tail_gap_s = float(sec_all[-1] - sec_all[app.idx_end])
     coverage_truncated = (
-        not touchdown
+        config.ASSUME_ARRIVALS_DATASET
+        and not touchdown
         and tail_gap_s <= config.END_TRUNCATED_MAX_GAP_S
         and np.isfinite(agl_all[-1])
         and agl_all[-1] <= config.END_TRUNCATED_MAX_AGL_FT

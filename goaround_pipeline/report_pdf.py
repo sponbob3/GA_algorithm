@@ -55,7 +55,10 @@ def _style_table(data, col_align=None, header=True):
     return t
 
 
-def main() -> None:
+def main(out_dir=None) -> None:
+    if out_dir is not None:
+        from pathlib import Path
+        config.OUTPUT_DIR = Path(out_dir)
     df = load()
     att = df[df.is_attempt]
     ga = df[df.outcome == "go_around"]
@@ -78,10 +81,10 @@ def main() -> None:
     figdir = config.OUTPUT_DIR / "figures"
     story = []
 
-    story.append(Paragraph("Go-Around Detection at KDAB "
-                           "— Summary Report", h1))
+    story.append(Paragraph(f"Go-Around Detection at "
+                           f"{config.AIRPORT_ICAO} — Summary Report", h1))
     story.append(Paragraph(
-        f"ERAU fleet arrivals, {df['t_local'].dt.date.min()} to "
+        f"{config.AIRPORT_ICAO} approaches, {df['t_local'].dt.date.min()} to "
         f"{df['t_local'].dt.date.max()} &nbsp;·&nbsp; ADS-B based detection "
         "pipeline (goaround_pipeline)", sub))
 
@@ -152,21 +155,34 @@ def main() -> None:
     story.append(PageBreak())
     story.append(Paragraph("Method in brief", h2))
     for txt in [
-        "<b>Detection.</b> Each aircraft-day is split into flight legs on "
-        "20-minute gaps. An approach attempt is a &ge;20 s interval aligned "
-        "with a runway extended centerline (&lt;5 NM out, &lt;0.30 NM "
-        "cross-track, track within 25&deg; of the runway heading, below "
-        "1,500 ft AGL, descending). Parallel-runway assignment uses a "
-        "low-altitude-weighted vote.",
-        "<b>Classification.</b> Touchdown evidence (on-ground flag, "
-        "AGL &le; 25 ft, a &ge;20 s flat stretch below 120 ft AGL, "
-        "groundspeed &le; 50 kt, or a data dropout below 150 ft) separates "
-        "landings and touch-and-goes. A go-around is a no-touchdown "
-        "approach whose low point (below 1,000 ft AGL, after &ge;150 ft of "
-        "observed descent) reverses into a sustained climb (&ge;300 fpm "
-        "for &ge;15 s, regaining &ge;250 ft) with &le;20 s spent at the "
-        "profile low point. Level segments of &ge;30 s classify as "
-        "deliberate low approaches; 20-30 s cases are flagged ambiguous. "
+        f"<b>Detection.</b> Each aircraft-day is split into flight legs on "
+        f"{config.SEGMENT_GAP_MINUTES:.0f}-minute gaps. An approach attempt "
+        f"is a &ge;{config.APPROACH_MIN_DURATION_S:.0f} s interval aligned "
+        f"with a runway extended centerline "
+        f"(&lt;{config.APPROACH_MAX_DIST_NM:.0f} NM out, "
+        f"&lt;{config.APPROACH_MAX_XTRACK_NM:.2f} NM cross-track, track "
+        f"within {config.APPROACH_MAX_TRACK_DELTA_DEG:.0f}&deg; of the "
+        f"runway heading, below {config.APPROACH_MAX_AGL_FT:,.0f} ft AGL, "
+        f"descending). Parallel-runway assignment uses a "
+        f"low-altitude-weighted vote.",
+        f"<b>Classification.</b> Touchdown evidence (on-ground flag, "
+        f"AGL &le; {config.TOUCHDOWN_AGL_FT:.0f} ft, a "
+        f"&ge;{config.TOUCHDOWN_PLATEAU_MIN_S:.0f} s flat stretch below "
+        f"{config.TOUCHDOWN_PLATEAU_MAX_AGL_FT:.0f} ft AGL, groundspeed "
+        f"&le; {config.TOUCHDOWN_GS_KT:.0f} kt, or a data dropout below "
+        f"{config.TOUCHDOWN_GAP_AGL_FT:.0f} ft) separates landings and "
+        f"touch-and-goes. A go-around is a no-touchdown approach whose low "
+        f"point (below {config.GA_MAX_LOW_AGL_FT:,.0f} ft AGL, after "
+        f"&ge;{config.GA_MIN_OBSERVED_DESCENT_FT:.0f} ft of observed "
+        f"descent) reverses into a sustained climb "
+        f"(&ge;{config.GA_CLIMB_VRATE_FPM:.0f} fpm for "
+        f"&ge;{config.GA_CLIMB_DURATION_S:.0f} s, regaining "
+        f"&ge;{config.GA_ALT_REGAIN_FT:.0f} ft) with "
+        f"&le;{config.LEVEL_GA_MAX_S:.0f} s spent at the profile low "
+        f"point. Level segments of &ge;{config.LEVEL_LOWAPP_MIN_S:.0f} s "
+        f"classify as deliberate low approaches; "
+        f"{config.LEVEL_GA_MAX_S:.0f}-{config.LEVEL_LOWAPP_MIN_S:.0f} s "
+        f"cases are flagged ambiguous. "
         "The two populations are separated by an empty gap in the "
         "plateau-duration distribution (figure below).",
         "<b>Validation.</b> Stratified manual review of event plots; "
@@ -197,7 +213,7 @@ def main() -> None:
         str(out), pagesize=letter,
         leftMargin=0.8 * inch, rightMargin=0.8 * inch,
         topMargin=0.7 * inch, bottomMargin=0.7 * inch,
-        title="Go-Around Detection at KDAB - Summary Report",
+        title=f"Go-Around Detection at {config.AIRPORT_ICAO} - Summary Report",
     )
     doc.build(story)
     print(f"Wrote {out}")

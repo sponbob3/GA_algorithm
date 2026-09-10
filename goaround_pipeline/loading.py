@@ -21,8 +21,14 @@ RAW_COLUMNS = [
 
 
 def load_day(path) -> pd.DataFrame:
-    """Load one daily parquet file with the columns the pipeline needs."""
-    df = pd.read_parquet(path, columns=RAW_COLUMNS)
+    """Load one daily file (parquet or csv) with the pipeline's columns."""
+    if str(path).lower().endswith(".csv"):
+        df = pd.read_csv(path, usecols=lambda c: c in RAW_COLUMNS)
+    else:
+        df = pd.read_parquet(path, columns=RAW_COLUMNS)
+    missing = [c for c in RAW_COLUMNS if c not in df.columns]
+    if missing:
+        raise ValueError(f"{path}: missing required columns {missing}")
     # pyarrow-backed dtypes -> plain numpy for speed and compatibility
     for col in ["latitude", "longitude", "altitude", "geoaltitude",
                 "vertical_rate", "groundspeed", "track"]:
@@ -42,6 +48,19 @@ def _smooth(series: pd.Series, window_s: int) -> pd.Series:
     return series.rolling(window_s, center=True, min_periods=1).median()
 
 
+def _ground_elevation(leg: pd.DataFrame):
+    """Ground reference under each point (ft MSL): the field elevation in
+    `flat` terrain mode, or a terrain-model sample in `dem` mode."""
+    if config.TERRAIN_MODE == "dem":
+        from . import terrain
+        return terrain.ground_elevation_ft(
+            config.AIRPORT_ICAO,
+            leg["latitude"].to_numpy(),
+            leg["longitude"].to_numpy(),
+        )
+    return config.FIELD_ELEVATION_FT
+
+
 def split_into_legs(df: pd.DataFrame) -> list[pd.DataFrame]:
     """Split a day's data into per-aircraft flight legs on time gaps."""
     legs = []
@@ -53,8 +72,9 @@ def split_into_legs(df: pd.DataFrame) -> list[pd.DataFrame]:
             if len(leg) < config.MIN_LEG_POINTS:
                 continue
             leg = leg.reset_index(drop=True).copy()
+            ground = _ground_elevation(leg)
             leg["agl"] = _smooth(
-                leg["geoaltitude"] - config.FIELD_ELEVATION_FT,
+                leg["geoaltitude"] - ground,
                 config.ALT_SMOOTH_WINDOW_S,
             )
             # fall back to baro altitude where geoaltitude is missing;
@@ -63,9 +83,7 @@ def split_into_legs(df: pd.DataFrame) -> list[pd.DataFrame]:
             missing = leg["agl"].isna()
             if missing.any() and leg["geoaltitude"].notna().any():
                 offset = (leg["geoaltitude"] - leg["altitude"]).median()
-                fallback = (
-                    leg["altitude"] + offset - config.FIELD_ELEVATION_FT
-                )
+                fallback = leg["altitude"] + offset - ground
                 leg.loc[missing, "agl"] = _smooth(
                     fallback, config.ALT_SMOOTH_WINDOW_S
                 )[missing]

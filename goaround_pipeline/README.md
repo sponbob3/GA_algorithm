@@ -72,26 +72,20 @@ lives in `config.py`, so the method transfers to other airports/datasets.
 
 ## Running it
 
+Use the repo-root entry point (see the top-level README for details):
+
 ```bash
-# full dataset (writes results/all_approaches.csv, results/go_around_events.csv,
-# per-event plots under results/plots/)
-.venv/bin/python -m goaround_pipeline.pipeline
-
-# specific days
-.venv/bin/python -m goaround_pipeline.pipeline daily_raw/ERU_KDAB_Arrivals_20250102_raw.parquet
-
-# summary report + figures (after the pipeline)
-.venv/bin/python -m goaround_pipeline.report
-
-# threshold sensitivity analysis (samples every 14th day)
-.venv/bin/python -m goaround_pipeline.sensitivity
-
-# cross-check against the traffic library's go-around detector
-.venv/bin/python -m goaround_pipeline.validate_traffic 20250108 20250115
+python run_analysis.py <dataset_name>            # e.g. KDAB_2025
+python run_analysis.py <dataset_name> --report --calibrate
+python run_analysis.py new-airport KBNA          # generate an airport profile
 ```
 
-Environment: Python 3.12 venv at `../.venv` with `traffic`, `pandas<3`,
-`pyarrow`, `matplotlib`.
+Research extras (run after configuring an airport profile):
+
+```bash
+python -m goaround_pipeline.sensitivity          # threshold sensitivity sweep
+python -m goaround_pipeline.validate_traffic 20250108   # cross-check vs traffic lib
+```
 
 ## Outputs
 
